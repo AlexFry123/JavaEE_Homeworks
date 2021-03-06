@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Books List</title>
+    <style>
+        .b1 {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+<label>Search by title:</label>
+<input type="text" oninput="searchByTitle()" id="titleSearch" placeholder="Just type any book title You are looking for"/>
+<br>
+<br>
+<table>
+    <thead >
+        <th class="b1">Title</th>
+        <th class="b1">ISBN</th>
+        <th class="b1">Author</th>
+    </thead>
+        <tbody id="tbody">
+
+        </tbody>
+</table>
+<br><hr>
+<h3>Create new book</h3>
+<form id="bookCreate">
+    Title: <input name="title">
+    <br />
+    ISBN: <input name="isbn">
+    <br />
+    Author: <input name="author">
+    <br />
+    <button type="submit">Send</button>
+</form>
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script>
+    function getBooks() {
+        $.ajax({
+            type: 'GET',
+            url: '/books-list',
+            success: function (response) {
+                $('#tbody').empty();
+                response.forEach(function(book){
+                    $('#tbody').append('<tr><td>' + book.title + '</td><td>' + book.isbn + '</td><td>' + book.author + '</td></tr>');
+                })
+            }
+            })
+        }
+
+    getBooks();
+
+        $('#bookCreate').submit(function(e){
+            e.preventDefault();
+
+            $('#loginResponse').text('');
+
+            $.ajax({
+                type: 'POST',
+                url: '/create-new-book',
+                dataType: 'json',
+                data: JSON.stringify({
+                    title: $(this).find('[name=title]').val(),
+                    isbn: $(this).find('[name=isbn]').val(),
+                    author: $(this).find('[name=author]').val()
+                }),
+                beforeSend: function(xhr) {
+                    xhr.setRequestHeader('Content-Type', 'application/json')
+                },
+                success: function (response) {
+                    searchByTitle()
+                },
+                error: () => {
+                    alert("Error occured while processing your request")
+                }
+            });
+        });
+
+        function getBooksFilteredByTitle(response){
+            $('#tbody').empty();
+            response.forEach(function(book){
+                $('#tbody').append('<tr><td>' + book.title + '</td><td>' + book.isbn + '</td><td>' + book.author + '</td></tr>');
+            })
+        }
+
+        function searchByTitle() {
+            console.log($('#titleSearch').val())
+            $.ajax({
+                type: 'POST',
+                url: '/search-by-title',
+                dataType: 'json',
+                data: JSON.stringify({
+                    title: $('#titleSearch').val()
+                }),
+                beforeSend: function(xhr) {
+                    xhr.setRequestHeader('Content-Type', 'application/json')
+                },
+                success: function (response) {
+                    console.log("Search")
+                    getBooksFilteredByTitle(response)
+                },
+                error: () => {
+                    alert("Error occured while processing your request")
+                }
+            });
+        }
+</script>
+
+</body>
+</html>
