@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <title>Index</title>
+    <link rel="stylesheet"
+          href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+          crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+
+</head>
+<body>
+
+<form id="searchBook">
+    <div class="col-9">
+<label>Search by title:</label>
+<input type="text" placeholder="Search" name="title"/>
+    <br/>
+
+    <button type="submit" >Search</button>
+    </div>
+    <div class="col-3">
+        <button id="show-all" class="col-11">Show all</button>
+    </div>
+</form>
+
+<div id="exceptionBlock">
+
+</div>
+<table>
+    <thead>
+    <tr>
+        <th scope="col">Title</th>
+        <th scope="col">Isbn</th>
+        <th scope="col">Author</th>
+        <th scope="col">Show</th>
+    </tr>
+    </thead>
+    <tbody id="booksTable">
+    <tr th:each="book: ${books}">
+        <td th:text="${book.title}"></td>
+        <td th:text="${book.isbn}"></td>
+        <td th:text="${book.authorName}"></td>
+        <td><a th:href="/book/${book.isbn}">Show</a></td>
+    </tr>
+
+    </tbody>
+</table>
+
+<br/>
+
+<h3>Create new book</h3>
+<form id="addBook">
+    Title: <input placeholder="Title" th:name="title">
+    <br />
+    ISBN: <input placeholder="Isbn" th:name="isbn">
+    <br />
+    Author: <input placeholder="Author"
+                   th:name="authorName">
+    <br />
+    <button type="submit">Send</button>
+</form>
+
+
+<script>
+    $(function () {
+        $('#addBook').submit(function (e) {
+            e.preventDefault();
+
+            let books = $('#booksTable');
+            let exception = $('#exceptionBlock');
+
+            $.ajax({
+                type: 'POST',
+                url: '/add',
+                dataType: 'json',
+                data: JSON.stringify({
+                    title: $(this).find('[name=title]').val(),
+                    isbn: $(this).find('[name=isbn]').val(),
+                    authorName: $(this).find('[name=authorName]').val()
+                }),
+                beforeSend: function (xhr) {
+                    xhr.setRequestHeader('Content-Type', 'application/json')
+                },
+                success: function (book) {
+                    exception.empty();
+                    books.append('<tr><td>' + book.title + '</td><td>' + book.isbn + '</td><td>' + book.authorName + '</td></tr>');
+                },
+                error: function (response){
+                    exception.text(response.responseText);
+                }
+            });
+        }),
+            $('#searchBook').submit(function (e) {
+                e.preventDefault();
+                let books = $('#booksTable');
+                let exception = $('#exceptionBlock');
+                console.log($('#searchBook').find('[name=title]').val());
+                $.ajax({
+                    type: 'GET',
+                    url: '/find-book',
+                    data: 'title='+$('#searchBook').find('[name=title]').val(),
+                    beforeSend: function (xhr) {
+                        xhr.setRequestHeader('Content-Type', 'text/html')
+                    },
+                    success: function (response) {
+                        books.empty();
+                        exception.empty();
+                        response.forEach(function (book) {
+                            books.append('<tr><td>' + book.title + '</td><td>' + book.isbn + '</td><td>' + book.authorName + '</td></tr>');
+                        });
+                    }
+                });
+            });
+        $('#show-all').click(function (e){
+            let books = $('#booksTable');
+            $.ajax({
+                type: 'GET',
+                url: '/book-list',
+                success: function (response) {
+                    books.empty();
+                    response.forEach(function (book) {
+                        books.append('<tr><td>' + book.title + '</td><td>' + book.isbn + '</td><td>' + book.authorName + '</td></tr>');
+                    });
+                }
+            });
+        });
+    });
+</script>
+</body>
+</html>
